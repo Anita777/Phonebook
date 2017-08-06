@@ -1,0 +1,30 @@
+{
+  "name": "p",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "dev": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anita777/Phonebook.git"
+  },
+  "keywords": [
+    "phonebook"
+  ],
+  "author": "Anita777",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Anita777/Phonebook/issues"
+  },
+  "homepage": "https://github.com/Anita777/Phonebook#readme",
+  "devDependencies": {
+    "babel-preset-env": "^1.6.0",
+    "webpack": "^3.4.1",
+    "webpack-dev-server": "^2.6.1"
+  }
+}
