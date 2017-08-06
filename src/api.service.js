@@ -1,3 +1,4 @@
+import main from './main.js'
 
 class Api {
   constructor() {
@@ -37,3 +38,4 @@ class Api {
   }
 }
 let api = new Api();
+export default api;

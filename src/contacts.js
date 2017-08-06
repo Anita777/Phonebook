@@ -1,3 +1,6 @@
+
+import api  from './api.service.js'
+import main from './main.js'
 class Contacts {
   constructor() {
     this.curFilter = [];
@@ -97,5 +100,5 @@ class Contacts {
     }
   }
 }
-
+export default Contacts;
 

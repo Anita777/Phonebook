@@ -1,4 +1,5 @@
-
+import api  from './api.service.js'
+import main from './main.js'
 class EditUser {
   constructor() {
     this.curFilter = {}
@@ -88,6 +89,7 @@ class EditUser {
 
     this.cancel.addEventListener('click', e => {
       e.preventDefault();
+      api.requestPatch(this.curFilter['0']);
       main.ui.user.render(this.curFilter);
     });
 
@@ -112,7 +114,6 @@ class EditUser {
         delete this.curFilter['0'].lastname;
       }
       api.requestPatch(this.curFilter['0']);
-      main.ui.user.render(this.curFilter['0']);
     });  
   }
   render(user) {
@@ -130,4 +131,4 @@ class EditUser {
     }
   }
 }
-
+export default EditUser

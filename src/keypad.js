@@ -1,17 +1,4 @@
 
-/*class Header {
-  constructor() {
-
-  }
-  render() {
-    const body = document.body;
-    document.querySelector("body").innerHTML = `<header class="header"><div class="container top-radius"><h2>Keypad</h2></div></header>`;
-  }
-}
-var head = new Header();
-head.render();
-*/
-
 class Keypad {
   constructor() {
     this.body = document.body;
@@ -93,5 +80,5 @@ class Keypad {
     }
   }
 }
-let keypad = new Keypad();
+export default Keypad;
 

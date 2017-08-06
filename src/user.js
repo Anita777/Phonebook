@@ -1,3 +1,4 @@
+import main from './main.js'
 class User {
   constructor() {
     this.body = document.body;
@@ -87,3 +88,4 @@ class User {
     }
   }
 }
+export default User

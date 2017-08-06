@@ -1,4 +1,6 @@
 
+import main from './main.js'
+import api  from './api.service.js'
 class AddUser {
   constructor() {
     this.addUser = {};
@@ -95,6 +97,6 @@ class AddUser {
     }
   }
 }
-let addUser = new AddUser();
+export default AddUser
 
 

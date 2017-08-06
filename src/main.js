@@ -1,4 +1,11 @@
-class Main {
+import Contacts  from './contacts.js'
+import api  from './api.service.js'
+import User  from './user.js'
+import EditUser  from './edit-contact.js'
+import Keypad  from './keypad.js'
+import AddUser  from './add-user.js'
+
+ class Main {
   constructor() {
     this.state = {
       db: {
@@ -13,7 +20,6 @@ class Main {
       }*/
     };
     this.ui = {
-      api: new Api(),
       contacts: new Contacts(),
       keypad: new Keypad(),
       editUser: new EditUser(),
@@ -38,7 +44,6 @@ class Main {
         }
         if (link.getAttribute('href') === 'keypad.html') {
           this.ui.keypad.render();
-    
         }
         if (link.getAttribute('href') === 'add-user.html') {
           this.ui.addUser.render();
@@ -56,6 +61,7 @@ class Main {
     this.router();
   } 
 }
-
 let main = new Main();
 main.render();
+
+export default main;
