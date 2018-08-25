@@ -1,27 +1,23 @@
 
 import api  from './api.service.js'
 import main from './main.js'
+
 class Contacts {
-  constructor() {
-    this.curFilter = [];
+  constructor(appState) {
+    this.appState = appState;
     this.tableHeaders = ['Name', 'Last Name', 'Email'];
   }
   createHeader() {
     return `<header class="header"><div class="container top-radius"><h2>Contacts</h2></div></header>`;
   }
   createTableBody(arg) {
-    let contacts;
-    if (arg) {
-      contacts = arg;
-    } else { 
-      contacts = this.user; 
-    }
-     contacts.forEach(el => {
+    let contacts = (arg) ? arg : this.appState.db.users;
+    contacts.forEach(el => {
       let arr = el.fullName.split(' ');
       el.name = arr[0];
       el.lastname = arr[1];
     })
-    let tbody = '<tbody>'
+    let tbody = '<tbody>';
     contacts.forEach(elem => {  
       tbody += `<tr><td>${elem.name}</td><td>${elem.lastname}</td><td class = "email">${elem.email}</td></tr>`;
     });
@@ -50,14 +46,14 @@ class Contacts {
     return main += this.createTable() + `</div></main>` ;
   }
   filterUser (char){
-    return this.curFilter = this.user.filter(elem => {
+    return this.appState.db.sortedUsers = this.appState.db.users.filter(elem => {  
        if (elem.name.search(`${char}`) != -1  || elem.name.toLowerCase().search(`${char}`) != -1) {
         return elem;
        }
     })
   }
   sortUsers(key) {
-    return  this.curFilter = this.user.sort((a, b) => (a[key] > b[key] ? 1 : -1));
+    return  this.appState.db.sortedUsers = this.appState.db.users.sort((a, b) => (a[key] > b[key] ? 1 : -1));
   }
   events() { 
     this.tbody = document.querySelector('tbody');
@@ -70,23 +66,18 @@ class Contacts {
 
     this.grid.addEventListener('click', e => {
       if (e.target.tagName != 'TH')  {
-        this.curFilter = this.user.filter(el => {
+        let selectUs = this.appState.db.users.filter(el => {
            return (el.name === e.target.textContent || el.lastname === e.target.textContent || el.email === e.target.textContent)
         })
-         main.ui.user.render(this.curFilter);
+         this.appState.db.selectedUser = selectUs[0];
+         main.ui.user.render();
       } else {
         this.sortUsers(e.target.innerHTML.toLowerCase().replace(/\s/ig,''));
         this.tbody.innerHTML = this.createTableBody();
       }
     });
   }
-  requestData() {
-    api.requestUser().then(data => {
-      this.user = data;
-      this.render( this.user);
-    });
-  }
-  render(user) {
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();

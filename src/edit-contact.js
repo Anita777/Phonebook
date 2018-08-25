@@ -1,8 +1,10 @@
+
 import api  from './api.service.js'
 import main from './main.js'
+
 class EditUser {
-  constructor() {
-    this.curFilter = {}
+  constructor(appState) {
+    this.appState = appState;
     this.mainInfo = [ 'name', 'lastname', 'company'];
     this.editInfo = ['phone', 'email', 'address', 'birthday', 'social profile', 'field'];
   }
@@ -26,25 +28,22 @@ class EditUser {
     main += this.createMainInfo();
     main += this.createEditInfo();
     return main +=
-      `<div class="edit-field">
-            <button href="#" class="delete-contact">delete contact</button>
-          </div>
-        </div>
+      `  </div>
       </div>
     </div>
   </main>`;
   }
   createPhoto() {
-    return `<div class="edit-foto"><img src="images/user-face-mini.png" alt="#" class=" user-img img-circle center-block"></div>`;
+    return `<div class="edit-foto"><img src="images/user_male.png" alt="#" class=" user-img img-circle center-block"></div>`;
   }
   createMainInfo() {
     let infoM = '';
     this.mainInfo.forEach(elem => {
-      if (this.curFilter['0'][elem]) {
+      if (this.appState.db.selectedUser[elem]) {
       infoM += `<div class="edit-field">
             <span class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span>
-            <label class="sr-only" for="${elem}">${this.curFilter[elem]}</label>
-            <input type="text" class="delete-btn" id="${elem}" value ="${this.curFilter['0'][elem]}">
+            <label class="sr-only" for="${elem}">${this.appState.db.selectedUser[elem]}</label>
+            <input type="text" class="delete-btn" id="${elem}" value ="${this.appState.db.selectedUser[elem]}">
           </div>`;
       } else {
         infoM += `<div class="edit-field">
@@ -60,11 +59,11 @@ class EditUser {
   	let infoE = `<div class="scroll-holder">
         <div class="edit-info">`;
     this.editInfo.forEach(elem => {
-      if (this.curFilter['0'][elem]) { //disabled
+      if (this.appState.db.selectedUser[elem]) { //disabled
         infoE += `<div class="edit-field">
             <span class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span>
-            <label class="sr-only" for="${elem}">${this.curFilter['0'][elem]}</label>
-            <input type="text" class="delete-btn" id="${elem}" value ="${this.curFilter['0'][elem]}">
+            <label class="sr-only" for="${elem}">${this.appState.db.selectedUser[elem]}</label>
+            <input type="text" class="delete-btn" id="${elem}" value ="${this.appState.db.selectedUser[elem]}">
           </div>`;
       } else {
         infoE += `<div class="edit-field">
@@ -79,25 +78,16 @@ class EditUser {
   events() {
     this.cancel = document.getElementById('cancel');
     this.done = document.getElementById('done');
-    this.delete = document.querySelector('.delete-contact');
     this.main = document.getElementById('main');
     
-    // убрали прежнее событие 
     this.main.addEventListener('click', e => {
       e.preventDefault();
     });
 
     this.cancel.addEventListener('click', e => {
       e.preventDefault();
-      api.requestPatch(this.curFilter['0']);
-      main.ui.user.render(this.curFilter);
+      api.requestPatch(this.appState.db.selectedUser);
     });
-
-    this.delete.addEventListener('click', e => {
-      e.preventDefault();
-      api.requestDelete(this.curFilter['0']);
-      main.ui.contacts.requestData();
-    })
 
     this.done.addEventListener('click', e => {
       e.preventDefault();
@@ -105,19 +95,19 @@ class EditUser {
       inputs.forEach(elem => {
         let key = elem.id;
         if (elem.value) {
-          this.curFilter['0'][key]= elem.value;
+          this.appState.db.selectedUser[key]= elem.value;
         }
       });
-      if (this.curFilter['0'].name && this.curFilter['0'].lastname) {
-        this.curFilter['0'].fullName = `${this.curFilter['0'].name} ${this.curFilter['0'].lastname}`
-        delete this.curFilter['0'].name;
-        delete this.curFilter['0'].lastname;
+      if (this.appState.db.selectedUser.name && this.appState.db.selectedUser.lastname) {
+        this.appState.db.selectedUser.fullName = `${this.appState.db.selectedUser.name} ${this.appState.db.selectedUser.lastname}`
+        delete this.appState.db.selectedUser.name;
+        delete this.appState.db.selectedUser.lastname;
       }
-      api.requestPatch(this.curFilter['0']);
+      api.requestPatch(this.appState.db.selectedUser);
+      main.ui.user.render();
     });  
   }
-  render(user) {
-    this.curFilter = user
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();

@@ -1,21 +1,22 @@
 
 import main from './main.js'
 import api  from './api.service.js'
+
 class AddUser {
-  constructor() {
-    this.addUser = {};
+  constructor(appState) {
+    this.appState = appState;
     this.mainInfo = ['name', 'lastname', 'company'];
     this.editInfo = ['phone', 'email', 'address', 'birthday', 'social profile', 'field'];
   }
   createHeader() {
     return `<header class="header">
-        <div class="container top-radius">
-          <nav class="user-top-line">
-            <a href="user.html" id = "cancel">Cancel</a>
-              <button class="done-btn" id = "done">Done</button>
-          </nav>
-        </div>
-    </header>`;
+              <div class="container top-radius">
+                <nav class="user-top-line">
+                  <a href="user.html" id = "cancel">Cancel</a>
+                  <button class="done-btn" id = "done">Done</button>
+                </nav>
+              </div>
+            </header>`;
   }
   transferNumber(value) {
     return value.replace(/(\d{1})(\d{2})(\d{2})(\d{2})/, '($1$2)-$3-$4-');
@@ -53,8 +54,6 @@ class AddUser {
         <input type="text" class="add-btn" id="${elem}" placeholder="${elem}">
       </div>`  
     });
-    editInfo += `<div class="edit-field"><button href="#" class="delete-contact">delete contact</button>
-    </div></div></div>`;
     return editInfo;
   }
   events () {
@@ -64,23 +63,31 @@ class AddUser {
     this.cancel = document.getElementById('cancel');
 
     this.btnDone.addEventListener('click', e => {
-      [...this.input].forEach(inp => {
-        if (inp.id === 'phone') {
-          this.addUser[inp.id] =  this.transferNumber(inp.value)
-        } else {
-          this.addUser[inp.id] = inp.value;
-        } 
-      });
-      this.addUser.fullName = `${this.addUser.name} ${this.addUser.lastname}`
-      delete this.addUser.name;
-      delete this.addUser.lastname;
-      api.requestPost(this.addUser);
 
+      let phone = document.getElementById('phone');
+      let email = document.getElementById('email');
+      let name = document.getElementById('name');
+      let lastname = document.getElementById('lastname');
+      this.appState.db.selectedUser[phone.id] = this.transferNumber(phone.value);
+      var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+      if(reg.test(email.value)) 
+        this.appState.db.selectedUser[email.id] = email.value;
+      else alert('Введите корректный e-mail');
+      this.appState.db.selectedUser[name.id] = name.value;
+      this.appState.db.selectedUser[lastname.id] = lastname.value;
+      this.appState.db.selectedUser.fullName = `${this.appState.db.selectedUser.name} ${this.appState.db.selectedUser.lastname}`
+      if (this.appState.db.selectedUser.phone!==undefined && this.appState.db.selectedUser.email!==undefined && 
+        this.appState.db.selectedUser.fullName !== " "  ) 
+      {
+        api.requestPost(this.appState.db.selectedUser);
+        main.ui.user.render();
+      }
+      else alert("Enter value!!")
     });
 
     this.cancel.addEventListener('click', e => {
       e.preventDefault();
-      main.ui.contacts.requestData();
+      main.render();
     });
   }
   render() {

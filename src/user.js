@@ -1,6 +1,9 @@
 import main from './main.js'
+import api  from './api.service.js'
+
 class User {
-  constructor() {
+  constructor(appState) {
+    this.appState = appState;
     this.body = document.body;
     this.optionsLine = {
       message:  'comment',
@@ -8,7 +11,7 @@ class User {
       video: 'facetime-video',
       mail: 'envelope'
     };
-    this.optionsTable = ['Notes', 'Send message', 'Share contact', 'Add to favorites', 'Share my location', 'Block this caller'];
+    this.optionsTable = ['Notes', 'Send message', 'Share contact', 'Add to favorites', /*'Share my location', 'Block this caller'*/];
   }
   createHeader() {
     return `<header class="header">
@@ -34,47 +37,55 @@ class User {
     }
     this.optionsTable.forEach(elem => {
       options += `<div class ="options-item"><a href="#">${elem}</a></div>`;
-    })
-    for(let key in this.curFilter) {
+    });
+    let user = this.appState.db.selectedUser;
     main += `<main class="main">
       <div class="container">
-        <img src="images/user-face.png" alt="#" class=" user-img img-circle center-block">
-          <div class="user-name">${this.curFilter[key].fullName}</div>
+        <img src="images/user_male.png" alt="#" class=" user-img img-circle center-block">
+          <div class="user-name">${user.fullName}</div>
 				<div class="options-line">
 				${userName}	
 				</div>
 				<div class="tel-number">
 					<h3>phone</h3>
-					<div> ${this.curFilter[key].phone} </div>
+					<div> ${user.phone} </div>
 				</div>
 				<div class="tel-number">
 					<h3>e-mail</h3>
-					<div>${this.curFilter[key].email}</div>
+					<div>${user.email}</div>
 				</div>
 				<div class="options-table">
-				${options}	
-				</div>
+				${options}
+        	<button id="delete" href="#" class="delete-contact">Delete User</button>
+        </div  
 			</div>
 		</main>`
-    }
 		return main;
 	}
   events() {
-    this.cancel = document.getElementById('backToContacts')
+    this.back = document.getElementById('backToContacts')
     this.edit = document.getElementById('editContact');
+    this.delete = document.getElementById('delete');
     
-    this.cancel.addEventListener('click', e => {
+    this.back.addEventListener('click', e => {
       e.preventDefault();
-      main.ui.contacts.requestData();
+      main.render();
     });
 
     this.edit.addEventListener('click', e => {
       e.preventDefault();
-      main.ui.editUser.render(this.curFilter);
+      main.ui.editUser.render();
+    });
+    // to do...
+    this.delete.addEventListener('click', e => {
+      e.preventDefault();
+      api.requestDelete(this.appState.db.selectedUser).
+      then(data => {
+        main.render();
+     })
     });
   }
-  render(user) {
-    this.curFilter = user;
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();

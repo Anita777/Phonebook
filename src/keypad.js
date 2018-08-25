@@ -7,12 +7,11 @@ class Keypad {
   createHeader() {
     return `<header class="header"><div class="container top-radius"><h2>Keypad</h2></div></header>`;
   }
-
   createMain() {
     let main = `<main class = "main keypad"><div class="container">
       <div class="number">
         <span id = "addUser" class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
-        <span class ="numbers"></span>
+       <span  class ="numbers"></span>
         <span id = "deleteNumber" class="glyphicon glyphicon-circle-arrow-left" aria-hidden="true"></span>
       </div>
       <div class="keypad-holder"> `;
@@ -25,23 +24,25 @@ class Keypad {
   </main>`
   }
   enterNumber(elem, num) {
-    if (elem.textContent.length < 15) {
-      if (!elem.textContent) {
-        elem.textContent += '(' + num;
-      } else if (elem.textContent.length == 4) {
-        elem.textContent += ')-' + num;
-      } else if (elem.textContent.length == 8 || elem.textContent.length == 11) {
-        elem.textContent += '-' + num;
-      }
-      else {
-        elem.textContent += num;
-      }
+    if (!elem.textContent) {
+      elem.textContent += '(' + num;
+    } else if (elem.textContent.length == 4) {
+      elem.textContent += ')-' + num;
+    } else if (elem.textContent.length == 8 || elem.textContent.length == 11) {
+      elem.textContent += '-' + num;
     }
-  }
+    else {
+      elem.textContent += num;
+    } 
+    localStorage.removeItem("phone");
+    localStorage.setItem("phone", elem.textContent);
+ }
   delNumber (numb) {
     let length = numb.textContent.length - 1;
     if (length >= 0) {
       numb.textContent = numb.textContent.slice(0, length);
+      localStorage.removeItem("phone");
+      localStorage.setItem("phone", numb.textContent);
     }
   }
   events() {
@@ -78,6 +79,7 @@ class Keypad {
       this.app.innerHTML = this.createHeader() + this.createMain();
       this.events();
     }
+    this.numbers.textContent = localStorage.getItem("phone");
   }
 }
 export default Keypad;

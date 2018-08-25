@@ -9,22 +9,23 @@ import AddUser  from './add-user.js'
   constructor() {
     this.state = {
       db: {
-        users: {},
-        activeUsers: [],
-        lastMessages: []
-      }/*,
+        users: [],
+        lastMessages: [],
+        selectedUser: {},
+        sortedUsers: []
+      },
       locals: {
         forms: {
-          input: 'qweqwe'
+          input: ''
         }
-      }*/
+      }/**/
     };
     this.ui = {
-      contacts: new Contacts(),
+      contacts: new Contacts(this.state),
       keypad: new Keypad(),
-      editUser: new EditUser(),
-      user: new User(),
-      addUser: new AddUser()
+      editUser: new EditUser(this.state),
+      user: new User(this.state),
+      addUser: new AddUser(this.state)
     }
   }
   router() {
@@ -33,14 +34,15 @@ import AddUser  from './add-user.js'
     function updateState(state) {
         app.innerHTML = state;
     }
+    
     links.forEach(link => {
       let href = link.getAttribute('href');
       link.classList.remove('active');
       link.addEventListener('click', event => {
         event.preventDefault();
         updateState(href);
-        if (link.getAttribute('href') === 'index.html') {
-          this.ui.contacts.requestData();
+        if (link.getAttribute('href') === 'index.html' || link.getAttribute('href') === 'contacts.html') {
+          this.render();
         }
         if (link.getAttribute('href') === 'keypad.html') {
           this.ui.keypad.render();
@@ -55,10 +57,14 @@ import AddUser  from './add-user.js'
     });
   }
   render() {
-    this.ui.contacts.requestData();
-    this.ui.keypad.render();
-    this.ui.addUser.render();
-    this.router();
+    api.requestUser().then(data => {
+      this.state.db.users = data;
+      this.ui.contacts.render();
+      let footer = document.querySelector('.footer');
+      footer.style.display="block";
+      this.router();
+    });
+
   } 
 }
 let main = new Main();

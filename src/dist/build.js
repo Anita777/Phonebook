@@ -86,21 +86,22 @@ class Main {
   constructor() {
     this.state = {
       db: {
-        users: {},
-        activeUsers: [],
-        lastMessages: [] /*,
-                         locals: {
-                          forms: {
-                            input: 'qweqwe'
-                          }
-                         }*/
+        users: [],
+        lastMessages: [],
+        selectedUser: {},
+        sortedUsers: []
+      },
+      locals: {
+        forms: {
+          input: ''
+        } /**/
       } };
     this.ui = {
-      contacts: new __WEBPACK_IMPORTED_MODULE_0__contacts_js__["a" /* default */](),
+      contacts: new __WEBPACK_IMPORTED_MODULE_0__contacts_js__["a" /* default */](this.state),
       keypad: new __WEBPACK_IMPORTED_MODULE_4__keypad_js__["a" /* default */](),
-      editUser: new __WEBPACK_IMPORTED_MODULE_3__edit_contact_js__["a" /* default */](),
-      user: new __WEBPACK_IMPORTED_MODULE_2__user_js__["a" /* default */](),
-      addUser: new __WEBPACK_IMPORTED_MODULE_5__add_user_js__["a" /* default */]()
+      editUser: new __WEBPACK_IMPORTED_MODULE_3__edit_contact_js__["a" /* default */](this.state),
+      user: new __WEBPACK_IMPORTED_MODULE_2__user_js__["a" /* default */](this.state),
+      addUser: new __WEBPACK_IMPORTED_MODULE_5__add_user_js__["a" /* default */](this.state)
     };
   }
   router() {
@@ -109,14 +110,15 @@ class Main {
     function updateState(state) {
       app.innerHTML = state;
     }
+
     links.forEach(link => {
       let href = link.getAttribute('href');
       link.classList.remove('active');
       link.addEventListener('click', event => {
         event.preventDefault();
         updateState(href);
-        if (link.getAttribute('href') === 'index.html') {
-          this.ui.contacts.requestData();
+        if (link.getAttribute('href') === 'index.html' || link.getAttribute('href') === 'contacts.html') {
+          this.render();
         }
         if (link.getAttribute('href') === 'keypad.html') {
           this.ui.keypad.render();
@@ -131,10 +133,13 @@ class Main {
     });
   }
   render() {
-    this.ui.contacts.requestData();
-    this.ui.keypad.render();
-    this.ui.addUser.render();
-    this.router();
+    __WEBPACK_IMPORTED_MODULE_1__api_service_js__["a" /* default */].requestUser().then(data => {
+      this.state.db.users = data;
+      this.ui.contacts.render();
+      let footer = document.querySelector('.footer');
+      footer.style.display = "block";
+      this.router();
+    });
   }
 }
 let main = new Main();
@@ -162,25 +167,18 @@ class Api {
       method: "POST",
       body: JSON.stringify(arg),
       headers: { "Content-Type": "application/json" }
-    }).then(data => {
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.contacts.requestData();
     });
   }
   requestDelete(arg) {
-    fetch(`${this.url}/${arg._id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" }
-    }).then(data => {
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.contacts.requestData();
+    return fetch(`${this.url}/${arg._id}`, {
+      method: 'DELETE'
     });
   }
   requestPatch(arg) {
-    fetch(`${this.url}/${arg._id}`, {
+    return fetch(`${this.url}/${arg._id}`, {
       method: "PATCH",
       body: JSON.stringify(arg),
       headers: { "Content-Type": "application/json" }
-    }).then(data => {
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.contacts.requestData();
     });
   }
 }
@@ -197,21 +195,17 @@ let api = new Api();
 
 
 
+
 class Contacts {
-  constructor() {
-    this.curFilter = [];
+  constructor(appState) {
+    this.appState = appState;
     this.tableHeaders = ['Name', 'Last Name', 'Email'];
   }
   createHeader() {
     return `<header class="header"><div class="container top-radius"><h2>Contacts</h2></div></header>`;
   }
   createTableBody(arg) {
-    let contacts;
-    if (arg) {
-      contacts = arg;
-    } else {
-      contacts = this.user;
-    }
+    let contacts = arg ? arg : this.appState.db.users;
     contacts.forEach(el => {
       let arr = el.fullName.split(' ');
       el.name = arr[0];
@@ -245,14 +239,14 @@ class Contacts {
     return main += this.createTable() + `</div></main>`;
   }
   filterUser(char) {
-    return this.curFilter = this.user.filter(elem => {
+    return this.appState.db.sortedUsers = this.appState.db.users.filter(elem => {
       if (elem.name.search(`${char}`) != -1 || elem.name.toLowerCase().search(`${char}`) != -1) {
         return elem;
       }
     });
   }
   sortUsers(key) {
-    return this.curFilter = this.user.sort((a, b) => a[key] > b[key] ? 1 : -1);
+    return this.appState.db.sortedUsers = this.appState.db.users.sort((a, b) => a[key] > b[key] ? 1 : -1);
   }
   events() {
     this.tbody = document.querySelector('tbody');
@@ -265,23 +259,18 @@ class Contacts {
 
     this.grid.addEventListener('click', e => {
       if (e.target.tagName != 'TH') {
-        this.curFilter = this.user.filter(el => {
+        let selectUs = this.appState.db.users.filter(el => {
           return el.name === e.target.textContent || el.lastname === e.target.textContent || el.email === e.target.textContent;
         });
-        __WEBPACK_IMPORTED_MODULE_1__main_js__["default"].ui.user.render(this.curFilter);
+        this.appState.db.selectedUser = selectUs[0];
+        __WEBPACK_IMPORTED_MODULE_1__main_js__["default"].ui.user.render();
       } else {
         this.sortUsers(e.target.innerHTML.toLowerCase().replace(/\s/ig, ''));
         this.tbody.innerHTML = this.createTableBody();
       }
     });
   }
-  requestData() {
-    __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestUser().then(data => {
-      this.user = data;
-      this.render(this.user);
-    });
-  }
-  render(user) {
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();
@@ -303,9 +292,13 @@ class Contacts {
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__main_js__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__api_service_js__ = __webpack_require__(1);
+
+
 
 class User {
-  constructor() {
+  constructor(appState) {
+    this.appState = appState;
     this.body = document.body;
     this.optionsLine = {
       message: 'comment',
@@ -313,7 +306,7 @@ class User {
       video: 'facetime-video',
       mail: 'envelope'
     };
-    this.optionsTable = ['Notes', 'Send message', 'Share contact', 'Add to favorites', 'Share my location', 'Block this caller'];
+    this.optionsTable = ['Notes', 'Send message', 'Share contact', 'Add to favorites'];
   }
   createHeader() {
     return `<header class="header">
@@ -340,46 +333,53 @@ class User {
     this.optionsTable.forEach(elem => {
       options += `<div class ="options-item"><a href="#">${elem}</a></div>`;
     });
-    for (let key in this.curFilter) {
-      main += `<main class="main">
+    let user = this.appState.db.selectedUser;
+    main += `<main class="main">
       <div class="container">
-        <img src="images/user-face.png" alt="#" class=" user-img img-circle center-block">
-          <div class="user-name">${this.curFilter[key].fullName}</div>
+        <img src="images/user_male.png" alt="#" class=" user-img img-circle center-block">
+          <div class="user-name">${user.fullName}</div>
 				<div class="options-line">
 				${userName}	
 				</div>
 				<div class="tel-number">
 					<h3>phone</h3>
-					<div> ${this.curFilter[key].phone} </div>
+					<div> ${user.phone} </div>
 				</div>
 				<div class="tel-number">
 					<h3>e-mail</h3>
-					<div>${this.curFilter[key].email}</div>
+					<div>${user.email}</div>
 				</div>
 				<div class="options-table">
-				${options}	
-				</div>
+				${options}
+        	<button id="delete" href="#" class="delete-contact">Delete User</button>
+        </div  
 			</div>
 		</main>`;
-    }
     return main;
   }
   events() {
-    this.cancel = document.getElementById('backToContacts');
+    this.back = document.getElementById('backToContacts');
     this.edit = document.getElementById('editContact');
+    this.delete = document.getElementById('delete');
 
-    this.cancel.addEventListener('click', e => {
+    this.back.addEventListener('click', e => {
       e.preventDefault();
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.contacts.requestData();
+      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].render();
     });
 
     this.edit.addEventListener('click', e => {
       e.preventDefault();
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.editUser.render(this.curFilter);
+      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.editUser.render();
+    });
+    // to do...
+    this.delete.addEventListener('click', e => {
+      e.preventDefault();
+      __WEBPACK_IMPORTED_MODULE_1__api_service_js__["a" /* default */].requestDelete(this.appState.db.selectedUser).then(data => {
+        __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].render();
+      });
     });
   }
-  render(user) {
-    this.curFilter = user;
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();
@@ -404,9 +404,11 @@ class User {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__main_js__ = __webpack_require__(0);
 
 
+
+
 class EditUser {
-  constructor() {
-    this.curFilter = {};
+  constructor(appState) {
+    this.appState = appState;
     this.mainInfo = ['name', 'lastname', 'company'];
     this.editInfo = ['phone', 'email', 'address', 'birthday', 'social profile', 'field'];
   }
@@ -429,25 +431,22 @@ class EditUser {
         <div class="main-info-holder">`;
     main += this.createMainInfo();
     main += this.createEditInfo();
-    return main += `<div class="edit-field">
-            <button href="#" class="delete-contact">delete contact</button>
-          </div>
-        </div>
+    return main += `  </div>
       </div>
     </div>
   </main>`;
   }
   createPhoto() {
-    return `<div class="edit-foto"><img src="images/user-face-mini.png" alt="#" class=" user-img img-circle center-block"></div>`;
+    return `<div class="edit-foto"><img src="images/user_male.png" alt="#" class=" user-img img-circle center-block"></div>`;
   }
   createMainInfo() {
     let infoM = '';
     this.mainInfo.forEach(elem => {
-      if (this.curFilter['0'][elem]) {
+      if (this.appState.db.selectedUser[elem]) {
         infoM += `<div class="edit-field">
             <span class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span>
-            <label class="sr-only" for="${elem}">${this.curFilter[elem]}</label>
-            <input type="text" class="delete-btn" id="${elem}" value ="${this.curFilter['0'][elem]}">
+            <label class="sr-only" for="${elem}">${this.appState.db.selectedUser[elem]}</label>
+            <input type="text" class="delete-btn" id="${elem}" value ="${this.appState.db.selectedUser[elem]}">
           </div>`;
       } else {
         infoM += `<div class="edit-field">
@@ -463,12 +462,12 @@ class EditUser {
     let infoE = `<div class="scroll-holder">
         <div class="edit-info">`;
     this.editInfo.forEach(elem => {
-      if (this.curFilter['0'][elem]) {
+      if (this.appState.db.selectedUser[elem]) {
         //disabled
         infoE += `<div class="edit-field">
             <span class="glyphicon glyphicon-minus-sign" aria-hidden="true"></span>
-            <label class="sr-only" for="${elem}">${this.curFilter['0'][elem]}</label>
-            <input type="text" class="delete-btn" id="${elem}" value ="${this.curFilter['0'][elem]}">
+            <label class="sr-only" for="${elem}">${this.appState.db.selectedUser[elem]}</label>
+            <input type="text" class="delete-btn" id="${elem}" value ="${this.appState.db.selectedUser[elem]}">
           </div>`;
       } else {
         infoE += `<div class="edit-field">
@@ -483,24 +482,15 @@ class EditUser {
   events() {
     this.cancel = document.getElementById('cancel');
     this.done = document.getElementById('done');
-    this.delete = document.querySelector('.delete-contact');
     this.main = document.getElementById('main');
 
-    // убрали прежнее событие 
     this.main.addEventListener('click', e => {
       e.preventDefault();
     });
 
     this.cancel.addEventListener('click', e => {
       e.preventDefault();
-      __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestPatch(this.curFilter['0']);
-      __WEBPACK_IMPORTED_MODULE_1__main_js__["default"].ui.user.render(this.curFilter);
-    });
-
-    this.delete.addEventListener('click', e => {
-      e.preventDefault();
-      __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestDelete(this.curFilter['0']);
-      __WEBPACK_IMPORTED_MODULE_1__main_js__["default"].ui.contacts.requestData();
+      __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestPatch(this.appState.db.selectedUser);
     });
 
     this.done.addEventListener('click', e => {
@@ -509,19 +499,19 @@ class EditUser {
       inputs.forEach(elem => {
         let key = elem.id;
         if (elem.value) {
-          this.curFilter['0'][key] = elem.value;
+          this.appState.db.selectedUser[key] = elem.value;
         }
       });
-      if (this.curFilter['0'].name && this.curFilter['0'].lastname) {
-        this.curFilter['0'].fullName = `${this.curFilter['0'].name} ${this.curFilter['0'].lastname}`;
-        delete this.curFilter['0'].name;
-        delete this.curFilter['0'].lastname;
+      if (this.appState.db.selectedUser.name && this.appState.db.selectedUser.lastname) {
+        this.appState.db.selectedUser.fullName = `${this.appState.db.selectedUser.name} ${this.appState.db.selectedUser.lastname}`;
+        delete this.appState.db.selectedUser.name;
+        delete this.appState.db.selectedUser.lastname;
       }
-      __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestPatch(this.curFilter['0']);
+      __WEBPACK_IMPORTED_MODULE_0__api_service_js__["a" /* default */].requestPatch(this.appState.db.selectedUser);
+      __WEBPACK_IMPORTED_MODULE_1__main_js__["default"].ui.user.render();
     });
   }
-  render(user) {
-    this.curFilter = user;
+  render() {
     this.app = document.getElementById('app');
     if (this.app) {
       this.app.innerHTML = this.createHeader() + this.createMain();
@@ -551,12 +541,11 @@ class Keypad {
   createHeader() {
     return `<header class="header"><div class="container top-radius"><h2>Keypad</h2></div></header>`;
   }
-
   createMain() {
     let main = `<main class = "main keypad"><div class="container">
       <div class="number">
         <span id = "addUser" class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
-        <span class ="numbers"></span>
+       <span  class ="numbers"></span>
         <span id = "deleteNumber" class="glyphicon glyphicon-circle-arrow-left" aria-hidden="true"></span>
       </div>
       <div class="keypad-holder"> `;
@@ -569,22 +558,24 @@ class Keypad {
   </main>`;
   }
   enterNumber(elem, num) {
-    if (elem.textContent.length < 15) {
-      if (!elem.textContent) {
-        elem.textContent += '(' + num;
-      } else if (elem.textContent.length == 4) {
-        elem.textContent += ')-' + num;
-      } else if (elem.textContent.length == 8 || elem.textContent.length == 11) {
-        elem.textContent += '-' + num;
-      } else {
-        elem.textContent += num;
-      }
+    if (!elem.textContent) {
+      elem.textContent += '(' + num;
+    } else if (elem.textContent.length == 4) {
+      elem.textContent += ')-' + num;
+    } else if (elem.textContent.length == 8 || elem.textContent.length == 11) {
+      elem.textContent += '-' + num;
+    } else {
+      elem.textContent += num;
     }
+    localStorage.removeItem("phone");
+    localStorage.setItem("phone", elem.textContent);
   }
   delNumber(numb) {
     let length = numb.textContent.length - 1;
     if (length >= 0) {
       numb.textContent = numb.textContent.slice(0, length);
+      localStorage.removeItem("phone");
+      localStorage.setItem("phone", numb.textContent);
     }
   }
   events() {
@@ -621,6 +612,7 @@ class Keypad {
       this.app.innerHTML = this.createHeader() + this.createMain();
       this.events();
     }
+    this.numbers.textContent = localStorage.getItem("phone");
   }
 }
 /* harmony default export */ __webpack_exports__["a"] = (Keypad);
@@ -635,21 +627,22 @@ class Keypad {
 
 
 
+
 class AddUser {
-  constructor() {
-    this.addUser = {};
+  constructor(appState) {
+    this.appState = appState;
     this.mainInfo = ['name', 'lastname', 'company'];
     this.editInfo = ['phone', 'email', 'address', 'birthday', 'social profile', 'field'];
   }
   createHeader() {
     return `<header class="header">
-        <div class="container top-radius">
-          <nav class="user-top-line">
-            <a href="user.html" id = "cancel">Cancel</a>
-              <button class="done-btn" id = "done">Done</button>
-          </nav>
-        </div>
-    </header>`;
+              <div class="container top-radius">
+                <nav class="user-top-line">
+                  <a href="user.html" id = "cancel">Cancel</a>
+                  <button class="done-btn" id = "done">Done</button>
+                </nav>
+              </div>
+            </header>`;
   }
   transferNumber(value) {
     return value.replace(/(\d{1})(\d{2})(\d{2})(\d{2})/, '($1$2)-$3-$4-');
@@ -687,8 +680,6 @@ class AddUser {
         <input type="text" class="add-btn" id="${elem}" placeholder="${elem}">
       </div>`;
     });
-    editInfo += `<div class="edit-field"><button href="#" class="delete-contact">delete contact</button>
-    </div></div></div>`;
     return editInfo;
   }
   events() {
@@ -698,22 +689,26 @@ class AddUser {
     this.cancel = document.getElementById('cancel');
 
     this.btnDone.addEventListener('click', e => {
-      [...this.input].forEach(inp => {
-        if (inp.id === 'phone') {
-          this.addUser[inp.id] = this.transferNumber(inp.value);
-        } else {
-          this.addUser[inp.id] = inp.value;
-        }
-      });
-      this.addUser.fullName = `${this.addUser.name} ${this.addUser.lastname}`;
-      delete this.addUser.name;
-      delete this.addUser.lastname;
-      __WEBPACK_IMPORTED_MODULE_1__api_service_js__["a" /* default */].requestPost(this.addUser);
+
+      let phone = document.getElementById('phone');
+      let email = document.getElementById('email');
+      let name = document.getElementById('name');
+      let lastname = document.getElementById('lastname');
+      this.appState.db.selectedUser[phone.id] = this.transferNumber(phone.value);
+      var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+      if (reg.test(email.value)) this.appState.db.selectedUser[email.id] = email.value;else alert('Введите корректный e-mail');
+      this.appState.db.selectedUser[name.id] = name.value;
+      this.appState.db.selectedUser[lastname.id] = lastname.value;
+      this.appState.db.selectedUser.fullName = `${this.appState.db.selectedUser.name} ${this.appState.db.selectedUser.lastname}`;
+      if (this.appState.db.selectedUser.phone !== undefined && this.appState.db.selectedUser.email !== undefined && this.appState.db.selectedUser.fullName !== " ") {
+        __WEBPACK_IMPORTED_MODULE_1__api_service_js__["a" /* default */].requestPost(this.appState.db.selectedUser);
+        __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.user.render();
+      } else alert("Enter value!!");
     });
 
     this.cancel.addEventListener('click', e => {
       e.preventDefault();
-      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].ui.contacts.requestData();
+      __WEBPACK_IMPORTED_MODULE_0__main_js__["default"].render();
     });
   }
   render() {
